@@ -1,2 +1,5 @@
-# rad-chicken
-Rad Chicken, a game for PICO-8
+# Rad Chicken
+
+A game for PICO-8.
+
+Check it out at [Rubber Chicken Studios](https://rubberchickenstudios.com/rcs.html)!
