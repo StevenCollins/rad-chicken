@@ -30,7 +30,7 @@ end
 -->8
 -- chicken
 -- init constants.
-ground_level=81
+g_level=81
 gravity=0.4
 jump_power=1
 jump_length=9
@@ -44,7 +44,7 @@ c_sprites={
 function make_chicken()
 	c={}
 	c.x=2
-	c.y=ground_level
+	c.y=g_level
 	c.dx=0
 	c.dy=0
 	c.bump_offset=0
@@ -59,7 +59,7 @@ function move_chicken()
 	if ((
 				-- check on the ground,
 				btn(🅾️) and
-				c.y==ground_level and
+				c.y==g_level and
 				c.jump_frame==0
 			) or (
 				-- or still jumping. 
@@ -77,8 +77,8 @@ function move_chicken()
 	c.y+=c.dy
 	-- don't fall through the ground.
 	-- the ground kills velocity.
-	if (c.y>ground_level) then
-		c.y=ground_level
+	if (c.y>g_level) then
+		c.y=g_level
 		c.dy=0
 	end
 end
@@ -86,7 +86,7 @@ end
 function draw_chicken()
  -- make it bumpy on the ground.
  -- set 0 or 1px y offset every other frame.
- if (c.y==ground_level) then
+ if (c.y==g_level) then
 		c.update_bump=not c.update_bump
 		if (c.update_bump) do
 			c.bump_offset = flr(rnd(2))
@@ -148,29 +148,40 @@ end
 -->8
 -- obstacles
 -- init constants.
-obstacle_sprites={
+o_sprites={
 	{{22}},
 	{{23,24}},
 	{{38,39},
 	 {54,55}}
 }
-obstacle_overhang=2 -- leftside buffer so onscreen obstacles don't disappear.
+o_overhang=2 -- leftside buffer so onscreen obstacles don't disappear.
+o_cntdn_min=12 -- minimum spritewidths until next obstacle
+o_cntdn_max=20 -- maximum ...
 
 function make_obstacles()
  -- bit of a misnomer,
  -- obstacles are made in move.
  o={}
-	for i=1,17+obstacle_overhang do
+	for i=1,17+o_overhang do
 		o[i]=0
 	end
 	
-	o[#o]=3 -- test obstacle
+	-- countdown to next obstacle.
+	o_cntdn=o_cntdn_min
 end
 
 function move_obstacles()
 	if (g.step==0) then -- obstacles follow the ground.
-		new_obstacle=0
-		-- add new obstacle,
+		-- if it's time, add a new obstacle and reset the countdown.
+		o_cntdn-=1
+		if (o_cntdn==0) then
+			new_obstacle=flr(rnd(#o_sprites))
+			o_cntdn=flr(rnd(o_cntdn_max-o_cntdn_min))+o_cntdn_min
+		else
+			new_obstacle=0
+		end
+			
+		-- add the new obstacle,
 		add(o,new_obstacle)
 		-- remove first obstacle.
 		del(o,o[1])
@@ -178,15 +189,16 @@ function move_obstacles()
 end
 
 function draw_obstacles()
+	print(o_cntdn)
 	for i, obstacle in ipairs(o) do
 		if (obstacle!=0) then
 			-- get obsticle sprite table.
-			ost=obstacle_sprites[obstacle]
+			ost=o_sprites[obstacle]
 			-- draw sprites in ost.
 			for y, row in ipairs(ost) do
 				for x, sprite in ipairs(row) do
 					if (sprite>0) then -- don't draw empty sprites.
-						spr(sprite,i*8+x*8-8*obstacle_overhang-8-g.step,113-#ost*8+y*8)
+						spr(sprite,i*8+x*8-8*o_overhang-8-g.step,113-#ost*8+y*8)
 					end
 				end
 			end
