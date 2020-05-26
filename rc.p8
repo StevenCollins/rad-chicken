@@ -31,9 +31,9 @@ end
 -- chicken
 -- init constants.
 g_level=81
-gravity=0.4
+gravity=0.7
 jump_power=1
-jump_length=9
+jump_length=15
 c_sprites={
 		{ 0, 0, 2, 3, 4, 0},
 		{ 0,17,18,19,20, 0},
@@ -175,7 +175,7 @@ function move_obstacles()
 		-- if it's time, add a new obstacle and reset the countdown.
 		o_cntdn-=1
 		if (o_cntdn==0) then
-			new_obstacle=flr(rnd(#o_sprites))
+			new_obstacle=flr(rnd(#o_sprites))+1
 			o_cntdn=flr(rnd(o_cntdn_max-o_cntdn_min))+o_cntdn_min
 		else
 			new_obstacle=0
@@ -189,7 +189,6 @@ function move_obstacles()
 end
 
 function draw_obstacles()
-	print(o_cntdn)
 	for i, obstacle in ipairs(o) do
 		if (obstacle!=0) then
 			-- get obsticle sprite table.
