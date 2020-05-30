@@ -3,32 +3,49 @@ version 27
 __lua__
 -- rad chicken
 -- rubber chicken studios
+
+-- constants.
+cartdata("rad_chicken")
 bg_colour=1
 trans_colour=15
 
 function _init()
+	-- game state.
+	game_over=false
+	score=0
+	highscore=dget(0) -- get highscore from cart data
+
  -- set transparency.
 	palt(0,false)
 	palt(trans_colour,true)
 	
+	-- init all the things!
 	make_chicken()
 	make_ground()
 	make_obstacles()
 end
 
 function _update()
- move_ground()
- move_chicken()
- move_obstacles()
+	if (not game_over) then
+	 move_ground()
+	 move_chicken()
+	 move_obstacles()
+	elseif (btn(❎)) then
+		_init()
+ end
 end
 
 function _draw()
-	-- clear screen to bg colour.
-	cls(bg_colour)
-	-- draw everything else.
-	draw_ground()
-	draw_chicken()
-	draw_obstacles()
+	if (not game_over) then
+		-- clear screen to bg colour.
+		cls(bg_colour)
+		-- draw everything else.
+		draw_ground()
+		draw_chicken()
+		draw_obstacles()
+	end
+	
+	draw_overlay()
 	
 	-- print(stat(1)) -- cpu usage
 end
@@ -103,22 +120,22 @@ function draw_chicken()
 	c_sprites[5][2]=rnd(l_w_sprites)
 	c_sprites[5][5]=rnd(r_w_sprites)
 	-- draw chicken sprites.
-	for y, row in ipairs(c_sprites) do
-		for x, sprite in ipairs(row) do
+	for spr_y, row in ipairs(c_sprites) do
+		for spr_x, sprite in ipairs(row) do
 			if (sprite>0) then -- don't draw empty sprites.
 				-- calculate offset for jump animation.
 				jump_offset=0
-				if (c.jump_frame > 0 and x>7-c.jump_frame) then
-					jump_offset=c.jump_frame-6+x
+				if (c.jump_frame > 0 and spr_x>7-c.jump_frame) then
+					jump_offset=c.jump_frame-6+spr_x
 				end
 				-- actually draw a sprite.
-				spr(sprite,c.x+x*8-8,c.y+y*8-8+c.bump_offset-jump_offset)
+				spr(sprite,c.x+spr_x*8-8,c.y+spr_y*8-8+c.bump_offset-jump_offset)
 			end
 		end
 	end
 end
 -->8
--- ground
+-- ground and overlay
 -- init constants.
 g_sprites={4,5,6,7}
 g_speed=2
@@ -142,14 +159,39 @@ function move_ground()
 	if (g.step==0) then
 		-- add new sprite,
 		add(g.sprites,rnd(g_sprites))
-		-- remove first sprite.
+		-- remove first sprite,
 		del(g.sprites,g.sprites[1])
+		-- and increase the score!
+		score+=1
 	end
 end
 
 function draw_ground()
 	for i, sprite in ipairs(g.sprites) do
 		spr(sprite,i*8-8-g.step,120)
+	end
+end
+
+function draw_overlay()
+	if (not game_over) then
+		print(highscore,7)
+		print(score,7)
+	else
+		local rnd_colour=rnd(16)
+		local offset=24
+		print("game over",46,offset,rnd_colour)
+		offset+=8
+		print("your score:",38,offset,rnd_colour)
+		print(score,82,offset,rnd_colour)
+		offset+=8
+		print("high score:",38,offset,rnd_colour)
+		print(highscore,82,offset,rnd_colour)
+		offset+=8
+		if (score>highscore) then
+			print("you're rad!!!!!",34,offset,rnd_colour)
+			offset+=8
+		end
+		print("press ❎ to play again",20,offset,rnd_colour)
 	end
 end
 -->8
@@ -211,7 +253,7 @@ function draw_obstacles()
 						local x=o_x_pos(obs_x,spr_x)
 						local y=o_y_pos(15,spr_y)
 						if (detect_collision(sprite,x,y)) then
-							-- print("dead")
+							die()
 						end
 						spr(sprite,x,y)
 					end
@@ -253,6 +295,13 @@ function detect_collision(sprite,x,y)
 		end
 	end
 	return false
+end
+
+function die()
+	game_over=true
+	if (score>highscore) then
+		dset(0,score)
+	end
 end
 __gfx__
 ffffffffffffffff00000000fffffffffbbffbffffbffbbfffbf33bff33bfbffffffafffcddfff0f0fffcddffbb33fffffffffffffffffffffffffffffff6666
