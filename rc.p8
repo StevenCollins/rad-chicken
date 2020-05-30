@@ -3,10 +3,13 @@ version 27
 __lua__
 -- rad chicken
 -- rubber chicken studios
+bg_colour=1
+trans_colour=15
+
 function _init()
  -- set transparency.
 	palt(0,false)
-	palt(15,true)
+	palt(trans_colour,true)
 	
 	make_chicken()
 	make_ground()
@@ -21,11 +24,13 @@ end
 
 function _draw()
 	-- clear screen to bg colour.
-	cls(1)
+	cls(bg_colour)
 	-- draw everything else.
 	draw_ground()
 	draw_chicken()
 	draw_obstacles()
+	
+	-- print(stat(1)) -- cpu usage
 end
 -->8
 -- chicken
@@ -115,8 +120,8 @@ end
 -->8
 -- ground
 -- init constants.
-ground_sprites={4,5,6,7}
-ground_speed=2
+g_sprites={4,5,6,7}
+g_speed=2
 
 function make_ground()
 	g={}
@@ -126,17 +131,17 @@ function make_ground()
 	-- for the width of the screen plus 1 sprites,
 	-- select a random ground sprite.
 	for i=1,17 do
-		g.sprites[i]=rnd(ground_sprites)
+		g.sprites[i]=rnd(g_sprites)
 	end
 end
 
 function move_ground()
 	-- increment or reset step counter.
-	g.step=(g.step+ground_speed)%8
+	g.step=(g.step+g_speed)%8
 	-- if we just reset...
 	if (g.step==0) then
 		-- add new sprite,
-		add(g.sprites,rnd(ground_sprites))
+		add(g.sprites,rnd(g_sprites))
 		-- remove first sprite.
 		del(g.sprites,g.sprites[1])
 	end
@@ -160,7 +165,8 @@ o_sprites={
 	 {30,31}}
 }
 o_overhang=2 -- leftside buffer so onscreen obstacles don't disappear.
-o_cntdn_min=12 -- minimum spritewidths until next obstacle
+o_offset=3 -- push obstacles slightly into ground.
+o_cntdn_min=12 -- minimum spritewidths until next obstacle.
 o_cntdn_max=20 -- maximum ...
 
 function make_obstacles()
@@ -199,15 +205,54 @@ function draw_obstacles()
 			-- get obstacle sprite table.
 			ost=o_sprites[obstacle]
 			-- draw sprites in ost.
-			for y, row in ipairs(ost) do
-				for x, sprite in ipairs(row) do
+			for spr_y, row in ipairs(ost) do
+				for spr_x, sprite in ipairs(row) do
 					if (sprite>0) then -- don't draw empty sprites.
-						spr(sprite,obs_x*8+x*8-8*o_overhang-8-g.step,113-#ost*8+y*8)
+						local x=o_x_pos(obs_x,spr_x)
+						local y=o_y_pos(15,spr_y)
+						if (detect_collision(sprite,x,y)) then
+							-- print("dead")
+						end
+						spr(sprite,x,y)
 					end
 				end
 			end
 		end
 	end
+end
+
+function o_x_pos(obs_x,spr_x)
+	return
+			obs_x*8 -- obstacle x position within screen.
+			+spr_x*8 -- sprite x position within obstacle.
+			-o_overhang*8 -- offset left for overhang.
+			-8	-- arrays should start at 0.
+			-g.step -- offset for scrolling animation.
+end
+
+function o_y_pos(obs_y,spr_y)
+	return
+			obs_y*8 -- obstacle y position within screen.
+			+spr_y*8 -- sprite y position within obstacle.
+			-#ost*8 -- top of sprite first, so go up by sprite height.
+			+o_offset -- offset obstacles slightly into ground.
+			-8	-- arrays should start at 0.			
+end
+
+-- detect collision by checking if any pixels to be drawn over are already a non-bg colour.
+function detect_collision(sprite,x,y)
+	for pxl_y=0,7 do
+		for pxl_x=0,7 do
+			if (x+pxl_x>0 and x+pxl_x<64 and y+pxl_y<120) then -- is the obstacle where the chicken could be?
+				if (sget((sprite%16)*8+pxl_x,flr(sprite/16)*8+pxl_y)!=trans_colour) then -- is the obstacle not transparent on the pixel we're checking?
+					if (pget(x+pxl_x,y+pxl_y)!=bg_colour) then -- is the pixel we're checking not the bg colour?
+						return true -- then it's a collision.
+					end
+				end
+			end
+		end
+	end
+	return false
 end
 __gfx__
 ffffffffffffffff00000000fffffffffbbffbffffbffbbfffbf33bff33bfbffffffafffcddfff0f0fffcddffbb33fffffffffffffffffffffffffffffff6666
