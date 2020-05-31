@@ -181,11 +181,9 @@ function draw_overlay()
 		local offset=24
 		print("game over",46,offset,rnd_colour)
 		offset+=8
-		print("your score:",38,offset,rnd_colour)
-		print(score,82,offset,rnd_colour)
+		print("your score:"..score,38,offset,rnd_colour)
 		offset+=8
-		print("high score:",38,offset,rnd_colour)
-		print(highscore,82,offset,rnd_colour)
+		print("high score:"..highscore,38,offset,rnd_colour)
 		offset+=8
 		if (score>highscore) then
 			print("you're rad!!!!!",34,offset,rnd_colour)
@@ -206,17 +204,26 @@ o_sprites={
 	{{14,15},
 	 {30,31}}
 }
+o_g_obstacles={1,2,3} -- ground obstacles.
+o_f_obstacles={4} -- flying obstacles.
+o_f_chance=0.2 -- chance for obstacle to be flying.
 o_overhang=2 -- leftside buffer so onscreen obstacles don't disappear.
 o_offset=3 -- push obstacles slightly into ground.
 o_cntdn_min=12 -- minimum spritewidths until next obstacle.
 o_cntdn_max=20 -- maximum ...
+o_height_min=2 -- minimum obstacle height (rows from top).
+o_height_max=14 -- maximum ...
+o_height_ground=15
 
 function make_obstacles()
- -- bit of a misnomer,
- -- obstacles are made in move.
+ -- bit of a misnomer, obstacles are made in move.
+ -- this initializes the obstacle tables.
  o={}
-	for i=1,17+o_overhang do
-		o[i]=0
+ for y=1,16 do
+ 	o[y]={}
+		for x=1,17+o_overhang do -- 17 so obstacles spawn offscreen.
+			o[y][x]=0
+		end
 	end
 	
 	-- countdown to next obstacle.
@@ -225,37 +232,48 @@ end
 
 function move_obstacles()
 	if (g.step==0) then -- obstacles follow the ground.
-		-- if it's time, add a new obstacle and reset the countdown.
 		o_cntdn-=1
-		if (o_cntdn==0) then
-			new_obstacle=flr(rnd(#o_sprites))+1
-			o_cntdn=flr(rnd(o_cntdn_max-o_cntdn_min))+o_cntdn_min
-		else
-			new_obstacle=0
+		new_obstacle=0
+		if (o_cntdn==0) then -- time for new obstacle!
+			o_cntdn=flr(rnd(o_cntdn_max-o_cntdn_min))+o_cntdn_min -- reset the countdown.
+			-- choose a new obstacle.
+			if (rnd()<o_f_chance) then -- flying obstacle.
+				new_obstacle=rnd(o_f_obstacles)
+				new_obstacle_y=flr(rnd(o_height_max))+o_height_min
+			else -- ground obstacle.
+				new_obstacle=rnd(o_g_obstacles)
+				new_obstacle_y=o_height_ground
+			end
 		end
-			
-		-- add the new obstacle,
-		add(o,new_obstacle)
-		-- remove first obstacle.
-		del(o,o[1])
+		-- add the new obstacle at the right height.
+		for i=1,16 do
+			if (i==new_obstacle_y) then
+				add(o[i],new_obstacle)
+			else
+				add(o[i],0)
+			end
+			del(o[i],o[i][1]) -- shift obstacles left.
+		end
 	end
 end
 
 function draw_obstacles()
-	for obs_x, obstacle in ipairs(o) do
-		if (obstacle!=0) then
-			-- get obstacle sprite table.
-			ost=o_sprites[obstacle]
-			-- draw sprites in ost.
-			for spr_y, row in ipairs(ost) do
-				for spr_x, sprite in ipairs(row) do
-					if (sprite>0) then -- don't draw empty sprites.
-						local x=o_x_pos(obs_x,spr_x)
-						local y=o_y_pos(15,spr_y)
-						if (detect_collision(sprite,x,y)) then
-							die()
+	for obs_y, obs_row in ipairs(o) do
+		for obs_x, obstacle in ipairs(obs_row) do
+			if (obstacle!=0) then
+				-- get obstacle sprite table.
+				ost=o_sprites[obstacle]
+				-- draw sprites in ost.
+				for spr_y, row in ipairs(ost) do
+					for spr_x, sprite in ipairs(row) do
+						if (sprite>0) then -- don't draw empty sprites.
+							local x=o_x_pos(obs_x,spr_x)
+							local y=o_y_pos(obs_y,spr_y)
+							if (detect_collision(sprite,x,y)) then
+								die()
+							end
+							spr(sprite,x,y)
 						end
-						spr(sprite,x,y)
 					end
 				end
 			end
