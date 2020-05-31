@@ -11,6 +11,7 @@ trans_colour=15
 
 function _init()
 	-- game state.
+	cntr=0 -- just a counter that increases every frame.
 	game_over=false
 	score=0
 	highscore=dget(0) -- get highscore from cart data
@@ -25,12 +26,13 @@ function _init()
 	make_obstacles()
 end
 
-function _update()
+function _update60()
+	cntr+=1 -- increase the counter.
 	if (not game_over) then
 	 move_ground()
 	 move_chicken()
 	 move_obstacles()
-	elseif (btn(❎)) then
+	elseif (btn(❎)) then -- reset game.
 		_init()
  end
 end
@@ -39,7 +41,7 @@ function _draw()
 	if (not game_over) then
 		-- clear screen to bg colour.
 		cls(bg_colour)
-		-- draw everything else.
+		-- draw everything.
 		draw_ground()
 		draw_chicken()
 		draw_obstacles()
@@ -48,6 +50,11 @@ function _draw()
 	draw_overlay()
 	
 	-- print(stat(1)) -- cpu usage
+end
+
+-- 0 to 7 counter
+function step()
+	return cntr%8
 end
 -->8
 -- chicken
@@ -72,7 +79,6 @@ function make_chicken()
 	c.dx=0
 	c.dy=0
 	c.bump_offset=0
-	c.update_bump=true
 	c.jump_frame=0
 end
 
@@ -108,17 +114,19 @@ function move_chicken()
 end
 
 function draw_chicken()
- -- make it bumpy on the ground.
- -- set 0 or 1px y offset every other frame.
- if (c.y==g_level) then
-		c.update_bump=not c.update_bump
-		if (c.update_bump) do
-			c.bump_offset = flr(rnd(2))
+	-- bumpy! set 0 or 1px y offset every 4 frames.
+	if (c.y==g_level) then -- on the ground?
+		if (cntr%4==0) do
+			c.bump_offset=flr(rnd(2))
 		end
+	else
+		c.bump_offset=0 -- no offset in the air.
 	end
-	-- do wheel animation.
-	c_sprites[5][2]=rnd(l_w_sprites)
-	c_sprites[5][5]=rnd(r_w_sprites)
+	-- do wheel animation every 4 frames.
+	if (cntr%4==0) then
+		c_sprites[5][2]=rnd(l_w_sprites)
+		c_sprites[5][5]=rnd(r_w_sprites)
+	end
 	-- draw chicken sprites.
 	for spr_y, row in ipairs(c_sprites) do
 		for spr_x, sprite in ipairs(row) do
@@ -138,12 +146,10 @@ end
 -- ground and overlay
 -- init constants.
 g_sprites={4,5,6,7}
-g_speed=2
 
 function make_ground()
 	g={}
 	g.sprites={}
-	g.step=0 -- pixel offset for animation.
 
 	-- for the width of the screen plus 1 sprites,
 	-- select a random ground sprite.
@@ -153,10 +159,8 @@ function make_ground()
 end
 
 function move_ground()
-	-- increment or reset step counter.
-	g.step=(g.step+g_speed)%8
-	-- if we just reset...
-	if (g.step==0) then
+	-- if we just hit the 8px boundary...
+	if (step()==0) then
 		-- add new sprite,
 		add(g.sprites,rnd(g_sprites))
 		-- remove first sprite,
@@ -168,7 +172,7 @@ end
 
 function draw_ground()
 	for i, sprite in ipairs(g.sprites) do
-		spr(sprite,i*8-8-g.step,120)
+		spr(sprite,i*8-8-step(),120)
 	end
 end
 
@@ -195,14 +199,20 @@ end
 -->8
 -- obstacles
 -- init constants.
-o_sprites={
-	{{8}},
-	{{9,10}},
-	{{11},
-	 {27},
-	 {43}},
-	{{14,15},
-	 {30,31}}
+o_sprites={ -- table{frame{row{sprite}}}
+	{{{8}}},
+	{{{9,10}}},
+	{{{11},
+	  {27},
+	  {43}}},
+	{{{14,15},
+	  {30,31}},
+	 {{46,47},
+	  {62,63}},
+	 {{78,79},
+	  {94,95}},
+	 {{46,47},
+	  {62,63}}}
 }
 o_g_obstacles={1,2,3} -- ground obstacles.
 o_f_obstacles={4} -- flying obstacles.
@@ -212,8 +222,9 @@ o_offset=3 -- push obstacles slightly into ground.
 o_cntdn_min=12 -- minimum spritewidths until next obstacle.
 o_cntdn_max=20 -- maximum ...
 o_height_min=2 -- minimum obstacle height (rows from top).
-o_height_max=14 -- maximum ...
+o_height_max=13 -- maximum ...
 o_height_ground=15
+o_framerate=4 -- update animation every x frames
 
 function make_obstacles()
  -- bit of a misnomer, obstacles are made in move.
@@ -231,7 +242,8 @@ function make_obstacles()
 end
 
 function move_obstacles()
-	if (g.step==0) then -- obstacles follow the ground.
+	-- if we just hit the 8px boundary...
+	if (step()==0) then
 		o_cntdn-=1
 		new_obstacle=0
 		if (o_cntdn==0) then -- time for new obstacle!
@@ -261,8 +273,8 @@ function draw_obstacles()
 	for obs_y, obs_row in ipairs(o) do
 		for obs_x, obstacle in ipairs(obs_row) do
 			if (obstacle!=0) then
-				-- get obstacle sprite table.
-				ost=o_sprites[obstacle]
+				-- get correct frame from the obstacle sprite table.
+				ost=o_sprites[obstacle][flr(cntr/o_framerate)%#o_sprites[obstacle]+1]
 				-- draw sprites in ost.
 				for spr_y, row in ipairs(ost) do
 					for spr_x, sprite in ipairs(row) do
@@ -287,7 +299,7 @@ function o_x_pos(obs_x,spr_x)
 			+spr_x*8 -- sprite x position within obstacle.
 			-o_overhang*8 -- offset left for overhang.
 			-8	-- arrays should start at 0.
-			-g.step -- offset for scrolling animation.
+			-step() -- offset for scrolling animation.
 end
 
 function o_y_pos(obs_y,spr_y)
