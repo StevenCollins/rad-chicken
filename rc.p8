@@ -62,14 +62,14 @@ end
 g_level=81
 gravity=0.2
 jump_power=0.5
-jump_length=10
-c_sprites={
+jump_length=10 -- number of frames the jump button works for.
+c_sprites={ -- default sprite.
 		{ 0, 0, 1, 2, 3, 0},
 		{ 0,16,17,18,19, 0},
 		{ 0,32,33,34,35, 0},
 		{20,48,49,50,51,25},
 		{36,37,38,39,40,41}}
-c_1_sprites={
+c_1_sprites={ -- redbull frames.
 		{{ 0,  0, 65, 66, 67, 0},
 		 { 0, 80, 81, 82, 83, 0},
 		 { 0, 96, 97, 98, 99, 0},
@@ -85,8 +85,8 @@ c_1_sprites={
 		 { 0,104,105,106,107, 0},
 		 {20,120,121,122,123,25},
 		 {36, 37, 38, 39, 40,41}}}
-c_1_sprites_list={1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2}
-c_2_sprites={
+c_1_sprites_list={1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2} -- redbull frame order.
+c_2_sprites={ -- jackson frames.
 		{{ 0,  0,129,130,131, 0},
 		 { 0,144,145,146,147, 0},
 		 { 0,160,161,162,163, 0},
@@ -97,7 +97,7 @@ c_2_sprites={
 		 { 0,164,165,166,167, 0},
 		 {20,180,181,182,183,25},
 		 {36, 37, 38, 39, 40,41}}}
-c_2_sprites_list={1,1,1,1,2,2,2,2}
+c_2_sprites_list={1,1,1,1,2,2,2,2} -- jackson frame order.
 l_w_sprites={21,37} -- left wheel sprites.
 r_w_sprites={24,40} -- right wheel sprites.
 
@@ -239,21 +239,29 @@ end
 -->8
 -- obstacles
 -- init constants.
-o_sprites={ -- table{frame{row{sprite}}}
+o_sprites={ -- table{obstacle{frame{row{sprite}}}}.
 	{{{8}}},
 	{{{9,10}}},
 	{{{11},
 	  {27},
-	  {43}}},
+	  {43}},
+	 {{12},
+	  {28},
+	  {44}},
+	 {{13},
+	  {29},
+	  {45}}},
 	{{{14,15},
 	  {30,31}},
 	 {{46,47},
 	  {62,63}},
 	 {{78,79},
-	  {94,95}},
-	 {{46,47},
-	  {62,63}}}
-}
+	  {94,95}}}}
+o_sprites_list={ -- table{obstacle{frame}}.
+	{1},
+	{1},
+	{1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2},
+	{1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2}}
 o_g_obstacles={1,2,3} -- ground obstacles.
 o_f_obstacles={4} -- flying obstacles.
 o_f_chance=0.2 -- chance for obstacle to be flying.
@@ -264,7 +272,6 @@ o_cntdn_max=20 -- maximum ...
 o_height_min=2 -- minimum obstacle height (rows from top).
 o_height_max=13 -- maximum ...
 o_height_ground=15
-o_framerate=4 -- update animation every x frames
 
 function make_obstacles()
  -- bit of a misnomer, obstacles are made in move.
@@ -314,7 +321,7 @@ function draw_obstacles()
 		for obs_x, obstacle in ipairs(obs_row) do
 			if (obstacle!=0) then
 				-- get correct frame from the obstacle sprite table.
-				ost=o_sprites[obstacle][flr(cntr/o_framerate)%#o_sprites[obstacle]+1]
+				ost=o_sprites[obstacle][o_sprites_list[obstacle][flr(cntr%#o_sprites_list[obstacle])+1]]
 				-- draw sprites in ost.
 				for spr_y, row in ipairs(ost) do
 					for spr_x, sprite in ipairs(row) do
