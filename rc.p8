@@ -19,6 +19,7 @@ function _init()
  -- set transparency.
 	palt(0,false)
 	palt(trans_colour,true)
+	cls(bg_colour)
 	
 	-- init all the things!
 	make_chicken()
@@ -63,6 +64,10 @@ g_level=81
 gravity=0.2
 jump_power=0.5
 jump_length=10 -- number of frames the jump button works for.
+tt_length=30 -- number of frames trick text appears for.
+tt_pre={"rad","awe","tube","cowab"}
+tt_suf={"ical","some","ular","unga"}
+
 c_sprites={ -- default sprite.
 		{ 0, 0, 1, 2, 3, 0},
 		{ 0,16,17,18,19, 0},
@@ -110,16 +115,35 @@ function make_chicken()
 	c.bump_offset=0
 	c.jump_frame=0
 	c.spriteset=c_sprites
+	c.trickd=false
+	c.tt=""
+	c.tt_cntr=0
 end
 
 function move_chicken()
+	-- landed a trick.
+	if (c.y==g_level and c.trickd and c.tt_cntr==0) then
+		c.trickd=false
+		c.tt=rnd(tt_pre)..rnd(tt_suf)
+		score+=10
+	end
+	-- trick text maintenance.
+	if (c.tt!="" and c.tt_cntr<=tt_length) then
+		c.tt_cntr+=1
+	elseif (c.tt_cntr>=tt_length) then
+		c.tt=""
+		c.tt_cntr=0
+	end
+	
 	-- tricks.
 	if (c.y!=g_level and btn(⬆️)) then -- redbull.
 		c.spriteset=c_1_sprites[c_1_sprites_list[(cntr%#c_1_sprites_list)+1]]
 		c.dy+=gravity/2
+		c.trickd=true
 	elseif (c.y!=g_level and btn(⬇️)) then -- jackson.
 		c.spriteset=c_2_sprites[c_2_sprites_list[(cntr%#c_2_sprites_list)+1]]
 		c.dy+=gravity*2
+		c.trickd=true
 	else -- no tricks.
 		c.spriteset=c_sprites
 		c.dy+=gravity
@@ -220,6 +244,10 @@ function draw_overlay()
 	if (not game_over) then
 		print(highscore,7)
 		print(score,7)
+		-- draw trick text.
+		if (c.tt) then
+			print(c.tt,c.x+32+c.tt_cntr,c.y-c.tt_cntr,rnd(16))
+		end
 	else
 		local rnd_colour=rnd(16)
 		local offset=24
