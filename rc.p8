@@ -62,7 +62,7 @@ function game_init()
 	cntr=0 -- just a counter that increases every frame.
 	game_over=false
 	score=0
-	highscore=dget(0) -- get highscore from cart data
+	highscore=dget(0) -- get highscore from cart data.
 	
 	-- init all the things!
 	make_chicken()
@@ -94,7 +94,7 @@ function game_draw()
 	
 	draw_overlay()
 	
-	-- print(stat(1)) -- cpu usage
+	-- print(stat(1),0,124,0) -- cpu usage.
 end
 
 -- 0 to 7 counter
@@ -129,22 +129,7 @@ c_1_sprites={ -- redbull frames.
 		 { 0,100,101,102,103, 0},
 		 {20,116,117,118,119,25},
 		 {36, 37, 38, 39, 40,41}},
- 	{{ 0,  0, 65, 66, 67, 0},
-		 { 0, 80, 81, 82, 83, 0},
-		 { 0, 96, 97, 98, 99, 0},
-		 {20,112,113,114,115,25},
-		 {36, 37, 38, 39, 40,41}},
-	{{ 0, 0, 1, 2, 3, 0},
-		{ 0,16,17,18,19, 0},
-		{ 0,32,33,34,35, 0},
-		{20,48,49,50,51,25},
-		{36,37,38,39,40,41}},
-	 {{ 0, 68, 69, 70, 71, 0},
-		 { 0, 84, 85, 86, 87, 0},
-		 { 0,100,101,102,103, 0},
-		 {20,116,117,118,119,25},
-		 {36, 37, 38, 39, 40,41}},
-	 {{ 0,  0, 65, 66, 67, 0},
+ 		{{ 0,  0, 65, 66, 67, 0},
 		 { 0, 80, 81, 82, 83, 0},
 		 { 0, 96, 97, 98, 99, 0},
 		 {20,112,113,114,115,25},
@@ -174,9 +159,9 @@ function make_chicken()
 	c.bump_offset=0
 	c.jump_frame=0
 	c.spriteset=c_sprites
-	c.trickd=false
-	c.tt=""
-	c.tt_cntr=0
+	c.trickd=false -- performed trick?
+	c.tt="" -- trick text.
+	c.tt_cntr=0 -- counter for trick text.
 end
 
 function move_chicken()
@@ -196,15 +181,19 @@ function move_chicken()
 	
 	-- tricks.
 	if (btn(⬆️)) then -- redbull.
+		if (c.trickd==false) then
+			sfx(2) -- only play for new trick.
+		end
 		c.spriteset=c_1_sprites[c_1_sprites_list[(cntr%#c_1_sprites_list)+1]]
 		c.dy+=gravity/2
 		c.trickd=true
-		sfx(2)
 	elseif (btn(⬇️)) then -- jackson.
+		if (c.trickd==false) then
+			sfx(3) -- only play for new trick.
+		end
 		c.spriteset=c_2_sprites[c_2_sprites_list[(cntr%#c_2_sprites_list)+1]]
 		c.dy+=gravity*2
 		c.trickd=true
-		sfx(3)
 	else -- no tricks.
 		c.spriteset=c_sprites
 		c.dy+=gravity
@@ -269,34 +258,29 @@ function draw_chicken()
 	end
 end
 -->8
--- ground and overlay
+-- ground,bg,overlay
 -- init constants.
 g_sprites={4,5,6,7}
 
 function make_ground()
+	-- init ground.
 	g={}
 	g.sprites={}
-	
-	layer1_x=0
-	layer1_speed=0.25
-	layer2_x=0
-	layer2_speed=0.5
-	layersun_x=64
-	layersun_y=flr(rnd(35))
-	layersun_speed=.005
-	layerswoosh_x=0
-	layerswoosh_speed=.15
-	layerswoosh2_x=256
-	layertrees_x=0
-	layertrees_speed=1
-	layertrees2_x=96
-	layertrees2_speed=1
-	
 	-- for the width of the screen plus 1 sprites,
 	-- select a random ground sprite.
 	for i=1,17 do
 		g.sprites[i]=rnd(g_sprites)
 	end
+	
+	-- init background layers.
+	layers={}
+	layers.pyramin={x=0,spd=0.5,w=127}
+	layers.pyramax={x=0,spd=0.25,w=256}
+	layers.sun={x=64,spd=0.005,w=127,y=30}
+	layers.swoosh={x=0,spd=0.15,w=256}
+	layers.swoosh2={x=256,spd=layers.swoosh.spd,w=layers.swoosh.w}
+	layers.trees={x=0,spd=1,w=64,rndx=256}
+	layers.trees2={x=96,spd=1,w=64,rndx=256}
 end
 
 function move_ground()
@@ -310,72 +294,44 @@ function move_ground()
 		score+=1
 	end
 	
-	-- moves the mountain by the speed, and kills it when it's gone too far.
-	layer1_x-=layer1_speed
-	if (layer1_x<-256) then 
-		layer1_x=128 
+	-- moves each layer by its speed, and kills it when it's gone too far.
+	for i,layer in pairs(layers) do
+		layer.x-=layer.spd
+		if (layer.x<-1*layer.w) then
+			layer.x=128
+			if (layer.rndx!=nil) then
+				layer.x+=rnd(layer.rndx)
+			end
+		end
 	end
-
-	layer2_x-=layer2_speed
-	if (layer2_x<-127) then 
-		layer2_x=128 
-	end
-	
-	layersun_x-=layersun_speed
-	if (layersun_x<-127) then 
-		layersun_x=128 
-	end
-		
-	layerswoosh_x-=layerswoosh_speed
-	if (layerswoosh_x<-256) then 
-		layerswoosh_x=128 
-	end
-	
-		layerswoosh2_x-=layerswoosh_speed
-	if (layerswoosh2_x<-256) then 
-		layerswoosh2_x=128 
-	end
-	
-		layertrees_x-=layertrees_speed
-	if (layertrees_x<-64) then 
-		layertrees_x=256+rnd(256) 
-	end
-	
-	layertrees2_x-=layertrees2_speed
-	if (layertrees2_x<-64) then 
-		layertrees2_x=256+rnd(256) 
-	end
-	
 end
 
 function draw_ground()
-
 	-- draw the swoosh image but stretched
- sspr(40,96,32,16, layerswoosh_x,-24, 256, 128)
- -- draw the second swoosh.
- sspr(40,96,32,16, layerswoosh2_x,-24, 256, 128)
- -- draw the sun.
- circfill(layersun_x,layersun_y,16,14)
- circfill(layersun_x,layersun_y,13,1)
- circfill(layersun_x,30,11,8)
- circ(layersun_x,layersun_y,16,6)
- circ(layersun_x,layersun_y,14,2)
- circ(layersun_x,30,11,2)
+	sspr(40,96,32,16, layers.swoosh.x,-24, 256, 128)
+	-- draw the second swoosh.
+	sspr(40,96,32,16, layers.swoosh2.x,-24, 256, 128)
+	-- draw the sun.
+	circfill(layers.sun.x,layers.sun.y,16,14)
+	circfill(layers.sun.x,layers.sun.y,13,1)
+	circfill(layers.sun.x,30,11,8)
+	circ(layers.sun.x,layers.sun.y,16,6)
+	circ(layers.sun.x,layers.sun.y,14,2)
+	circ(layers.sun.x,30,11,2)
 	-- draw sunglasses on the sun.
-	spr(22,layersun_x-5,25,2,1)
+	spr(22,layers.sun.x-5,25,2,1)
 	-- draw the pyramids.
-	map(57,0,layer1_x,24,32,16)
- map(40,0,layer2_x,64,16,8)
- -- draw the palm trees.
- sspr(64,64,32,32,layertrees_x,62,64,64)
- sspr(96,64,32,32,layertrees2_x,62,64,64)
+	map(57,0,layers.pyramax.x,24,32,16)
+	map(40,0,layers.pyramin.x,64,16,8)
+	-- draw the palm trees.
+	sspr(64,64,32,32,layers.trees.x,62,64,64)
+	sspr(96,64,32,32,layers.trees2.x,62,64,64)
  
- if (cntr%4==0) do
- layersun_y=flr(29+rnd(3))
- end
- 
+	if (cntr%4==0) do
+		layers.sun.y=flr(29+rnd(3))
+	end
 
-	for i, sprite in ipairs(g.sprites) do
+	for i,sprite in ipairs(g.sprites) do
 		spr(sprite,i*8-8-step(),120)
 	end
 end
@@ -439,7 +395,6 @@ o_cntdn_min=12 -- minimum spritewidths until next obstacle.
 o_cntdn_max=20 -- maximum ...
 o_height_min=2 -- minimum obstacle height (rows from top).
 o_height_max=13 -- maximum ...
-o_height_ground=15
 
 function make_obstacles()
  -- bit of a misnomer, obstacles are made in move.
@@ -469,7 +424,7 @@ function move_obstacles()
 				new_obstacle_y=flr(rnd(o_height_max))+o_height_min
 			else -- ground obstacle.
 				new_obstacle=rnd(o_g_obstacles)
-				new_obstacle_y=o_height_ground
+				new_obstacle_y=15 -- ground height.
 			end
 		end
 		-- add the new obstacle at the right height.
@@ -549,13 +504,6 @@ function die()
 		dset(0,score)
 	end
 end
--->8
-  --sfx maybe?
-  if 
-  	btn(❎)
-  then
-  	 sfx(0)
-  end
 __gfx__
 ffffffffffffffff00000000fffffffffbbffbffffbffbbfffbf33bff33bfbfffffffaffaddfff0f0fffaddffbb33fffffffffffffffffffffffffffffff6666
 ffffffffffffffff0000000000ffffff33333333333333333333433333433333fffffdffffdfff5055ffffdfffbf378ffbb33fffffffffffffffff666f666776
