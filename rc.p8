@@ -61,14 +61,14 @@ function game_init()
 	-- game state.
 	cntr=0 -- just a counter that increases every frame.
 	game_over=false
-	score=0
+	points=0 -- holds points for most recent trick.
+	score=0 -- total points scored.
 	highscore=dget(0) -- get highscore from cart data.
 	
 	-- init all the things!
 	make_chicken()
 	make_ground()
 	make_obstacles()
-
 end
 
 function game_update()
@@ -129,7 +129,7 @@ c_1_sprites={ -- redbull frames.
 		 { 0,100,101,102,103, 0},
 		 {20,116,117,118,119,25},
 		 {36, 37, 38, 39, 40,41}},
- 		{{ 0,  0, 65, 66, 67, 0},
+		{{ 0,  0, 65, 66, 67, 0},
 		 { 0, 80, 81, 82, 83, 0},
 		 { 0, 96, 97, 98, 99, 0},
 		 {20,112,113,114,115,25},
@@ -162,23 +162,11 @@ function make_chicken()
 	c.trickd=false -- performed trick?
 	c.tt="" -- trick text.
 	c.tt_cntr=0 -- counter for trick text.
+	c.ab_cntr=0 -- length of time airborne.
+	c.o_jumped=0 -- track the obstacle jumped.
 end
 
 function move_chicken()
-	-- landed a trick.
-	if (c.y==g_level and c.trickd and c.tt_cntr==0) then
-		c.trickd=false
-		c.tt=rnd(tt_pre)..rnd(tt_suf)
-		score+=10
-	end
-	-- trick text maintenance.
-	if (c.tt!="" and c.tt_cntr<=tt_length) then
-		c.tt_cntr+=1
-	elseif (c.tt_cntr>=tt_length) then
-		c.tt=""
-		c.tt_cntr=0
-	end
-	
 	-- tricks.
 	if (btn(⬆️)) then -- redbull.
 		if (c.trickd==false) then
@@ -203,7 +191,7 @@ function move_chicken()
 	if ((
 				-- check on the ground,
 				btn(🅾️) and
-				c.y==g_level and
+				c.y>=g_level and
 				c.jump_frame==0
 			) or (
 				-- or still jumping. 
@@ -218,13 +206,45 @@ function move_chicken()
 		c.jump_frame=0
 	end
 	
-	-- do move.
+	-- track the obstacle in the jump zone.
+	for o_y=10,15 do -- can only jump over obstacles between 10 and 15 y.
+		for o_x=2+o_overhang,4+o_overhang do -- skateboard is roughly between 2 and 4.
+			if (o[o_y][o_x]!=0) then
+				c.o_jumped=o[o_y][o_x]
+			end
+		end
+	end
+	
+	-- do move. gravity and airborne cntr always happen.
 	c.y+=c.dy
-	-- don't fall through the ground.
-	-- the ground kills velocity.
-	if (c.y>g_level) then
-		c.y=g_level
-		c.dy=0
+	c.ab_cntr+=1
+	
+	-- landed a trick.
+	if (c.y>=g_level and c.trickd and c.tt_cntr==0 and c.o_jumped!=0) then
+		c.trickd=false
+		-- calculate points, show trick text if good, and add points to score.
+		points=100-c.ab_cntr+o_bonus[c.o_jumped]
+		if (points>40) then
+			c.tt=rnd(tt_pre)..rnd(tt_suf)
+		end
+		if (points>0) then
+			score+=points
+		end
+	end
+	-- trick text maintenance.
+	if (c.tt!="" and c.tt_cntr<=tt_length) then
+		c.tt_cntr+=1
+	elseif (c.tt_cntr>=tt_length) then
+		c.tt=""
+		c.tt_cntr=0
+	end
+
+	-- on the ground.
+	if (c.y>=g_level) then
+		c.y=g_level -- don't fall through it.
+		c.dy=0 -- stop trying to fall through it.
+		c.ab_cntr=0 -- not airborne.
+		c.o_jumped=0 -- not jumping an obstacle.
 	end
 end
 
@@ -276,7 +296,7 @@ function make_ground()
 	layers={}
 	layers.pyramin={x=0,spd=0.5,w=127}
 	layers.pyramax={x=0,spd=0.25,w=256}
-	layers.sun={x=64,spd=0.005,w=127,y=30}
+	layers.sun={x=50,spd=0.005,w=127,y=30}
 	layers.swoosh={x=0,spd=0.15,w=256}
 	layers.swoosh2={x=256,spd=layers.swoosh.spd,w=layers.swoosh.w}
 	layers.trees={x=0,spd=1,w=64,rndx=256}
@@ -288,10 +308,8 @@ function move_ground()
 	if (step()==0) then
 		-- add new sprite,
 		add(g.sprites,rnd(g_sprites))
-		-- remove first sprite,
+		-- and remove first sprite.
 		del(g.sprites,g.sprites[1])
-		-- and increase the score!
-		score+=1
 	end
 	
 	-- moves each layer by its speed, and kills it when it's gone too far.
@@ -340,6 +358,7 @@ function draw_overlay()
 	if (not game_over) then
 		print(highscore,7)
 		print(score,7)
+		print(points,7)
 		-- draw trick text.
 		if (c.tt) then
 			print(c.tt,c.x+32+c.tt_cntr,c.y-c.tt_cntr,rnd(16))
@@ -389,6 +408,7 @@ o_sprites_list={ -- table{obstacle{frame}}.
 o_g_obstacles={1,2,3} -- ground obstacles.
 o_f_obstacles={4} -- flying obstacles.
 o_f_chance=0.2 -- chance for obstacle to be flying.
+o_bonus={0,10,20,50} -- bonus points for each obstacle.
 o_overhang=2 -- leftside buffer so onscreen obstacles don't disappear.
 o_offset=5 -- push obstacles slightly into ground.
 o_cntdn_min=12 -- minimum spritewidths until next obstacle.
@@ -402,7 +422,7 @@ function make_obstacles()
  o={}
  for y=1,16 do
  	o[y]={}
-		for x=1,17+o_overhang do -- 17 so obstacles spawn offscreen.
+		for x=1,16+o_overhang do
 			o[y][x]=0
 		end
 	end
