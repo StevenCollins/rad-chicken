@@ -8,6 +8,7 @@ __lua__
 cartdata("rad_chicken")
 bg_colour=1
 trans_colour=15
+game_speed=1
 
 function _init() title_init() end
 
@@ -15,8 +16,11 @@ function title_init()
 	_update60=title_update
 	_draw=title_draw
 	
+	cntr=0 -- just a counter that increases every frame.
+	
+	fast() -- set initial speed and create pause menu item.
 	-- create pause menu item.
-	menuitem(1, "reset highscore",
+	menuitem(2,"reset highscore",
 			function()
 				dset(0,0)
 				highscore=0
@@ -26,6 +30,17 @@ function title_init()
 	-- set transparency.
 	palt(0,false)
 	palt(trans_colour,true)
+end
+
+function fast()
+	game_speed=2
+	cntr+=cntr%2 -- make cntr even to avoid bugs.
+	menuitem(1,"slooow dooown",slow)
+end
+
+function slow()
+	game_speed=1
+	menuitem(1,"gotta go fast",fast)
 end
 
 function title_update()
@@ -59,7 +74,6 @@ function game_init()
 	_draw=game_draw
 	
 	-- game state.
-	cntr=0 -- just a counter that increases every frame.
 	game_over=false
 	points=0 -- holds points for most recent trick.
 	score=0 -- total points scored.
@@ -72,7 +86,7 @@ function game_init()
 end
 
 function game_update()
-	cntr+=1 -- increase the counter.
+	cntr+=game_speed -- increase the counter.
 	if (not game_over) then
 	 move_ground()
 	 move_chicken()
@@ -95,6 +109,7 @@ function game_draw()
 	draw_overlay()
 	
 	-- print(stat(1),0,124,0) -- cpu usage.
+	-- print(cntr,0,124,0) -- cntr value.
 end
 
 -- 0 to 7 counter
@@ -220,7 +235,7 @@ function move_chicken()
 	c.ab_cntr+=1
 	
 	-- landed a trick.
-	if (c.y>=g_level and c.trickd and c.tt_cntr==0 and c.o_jumped!=0) then
+	if (c.y>=g_level and c.tt_cntr==0 and c.o_jumped!=0) then
 		c.trickd=false
 		-- calculate points, show trick text if good, and add points to score.
 		points=100-c.ab_cntr+o_bonus[c.o_jumped]
@@ -411,8 +426,8 @@ o_f_chance=0.2 -- chance for obstacle to be flying.
 o_bonus={0,10,20,50} -- bonus points for each obstacle.
 o_overhang=2 -- leftside buffer so onscreen obstacles don't disappear.
 o_offset=5 -- push obstacles slightly into ground.
-o_cntdn_min=12 -- minimum spritewidths until next obstacle.
-o_cntdn_max=20 -- maximum ...
+o_cntdn_min=16 -- minimum spritewidths until next obstacle.
+o_cntdn_max=30 -- maximum ...
 o_height_min=2 -- minimum obstacle height (rows from top).
 o_height_max=13 -- maximum ...
 
@@ -437,7 +452,7 @@ function move_obstacles()
 		o_cntdn-=1
 		new_obstacle=0
 		if (o_cntdn==0) then -- time for new obstacle!
-			o_cntdn=flr(rnd(o_cntdn_max-o_cntdn_min))+o_cntdn_min -- reset the countdown.
+			o_cntdn=flr(rnd(o_cntdn_max-o_cntdn_min)-(cntr/2000))+o_cntdn_min -- reset the countdown.
 			-- choose a new obstacle.
 			if (rnd()<o_f_chance) then -- flying obstacle.
 				new_obstacle=rnd(o_f_obstacles)
