@@ -128,6 +128,7 @@ g_level=83
 gravity=0.2
 jump_power=0.5
 jump_length=10 -- number of frames the jump button works for.
+float_length=15 -- number of float frames.
 tt_length=30 -- number of frames trick text appears for.
 tt_pre={"rad","awe","tube","cowab"}
 tt_suf={"ical","some","ular","unga"}
@@ -184,6 +185,7 @@ function make_chicken()
 	c.tt_cntr=0 -- counter for trick text.
 	c.ab_cntr=0 -- length of time airborne.
 	c.o_jumped=0 -- track the obstacle jumped.
+	c.float_cntr=0 -- track time floating.
 end
 
 function move_chicken()
@@ -201,6 +203,14 @@ function move_chicken()
 		end
 		c.spriteset=c_2_sprites[c_2_sprites_list[(step_x(#c_2_sprites_list))+1]]
 		c.dy+=gravity*2
+		c.trickd=true
+	elseif ((btn(⬅️) or btn(➡️)) and c.float_cntr<float_length) then -- float.
+		if (c.trickd==false) then
+			sfx(2) -- only play for new trick.
+		end
+		c.spriteset=c_1_sprites[c_1_sprites_list[(step_x(#c_1_sprites_list))+1]]
+		c.dy=0 -- stop vertical movement.
+		c.float_cntr+=1
 		c.trickd=true
 	else -- no tricks.
 		c.spriteset=c_sprites
@@ -265,6 +275,7 @@ function move_chicken()
 		c.dy=0 -- stop trying to fall through it.
 		c.ab_cntr=0 -- not airborne.
 		c.o_jumped=0 -- not jumping an obstacle.
+		c.float_cntr=0 -- reset float cntr.
 	end
 end
 
