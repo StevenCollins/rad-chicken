@@ -112,9 +112,14 @@ function game_draw()
 	-- print(cntr,0,124,0) -- cntr value.
 end
 
--- 0 to 7 counter
+-- 0 to 7 counter.
 function step()
 	return cntr%8
+end
+
+-- 0 to x counter, game_speed dependant.
+function step_x(x)
+	return (cntr/game_speed)%x
 end
 -->8
 -- chicken
@@ -161,7 +166,7 @@ c_2_sprites={ -- jackson frames.
 		 { 0,164,165,166,167, 0},
 		 {20,180,181,182,183,25},
 		 {36, 37, 38, 39, 40,41}}}
-c_2_sprites_list={1,1,1,1,2,2,2,2} -- jackson frame order.
+c_2_sprites_list={1,1,2,2} -- jackson frame order.
 l_w_sprites={21,37} -- left wheel sprites.
 r_w_sprites={24,40} -- right wheel sprites.
 
@@ -187,14 +192,14 @@ function move_chicken()
 		if (c.trickd==false) then
 			sfx(2) -- only play for new trick.
 		end
-		c.spriteset=c_1_sprites[c_1_sprites_list[(cntr%#c_1_sprites_list)+1]]
+		c.spriteset=c_1_sprites[c_1_sprites_list[(step_x(#c_1_sprites_list))+1]]
 		c.dy+=gravity/2
 		c.trickd=true
 	elseif (btn(⬇️)) then -- jackson.
 		if (c.trickd==false) then
 			sfx(3) -- only play for new trick.
 		end
-		c.spriteset=c_2_sprites[c_2_sprites_list[(cntr%#c_2_sprites_list)+1]]
+		c.spriteset=c_2_sprites[c_2_sprites_list[(step_x(#c_2_sprites_list))+1]]
 		c.dy+=gravity*2
 		c.trickd=true
 	else -- no tricks.
@@ -266,14 +271,14 @@ end
 function draw_chicken()
 	-- bumpy! set 0 or 1px y offset every 4 frames.
 	if (c.y==g_level) then -- on the ground?
-		if (cntr%4==0) do
+		if (step_x(4)==0) do
 			c.bump_offset=flr(rnd(2))
 		end
 	else
 		c.bump_offset=0 -- no offset in the air.
 	end
 	-- do wheel animation every 4 frames.
-	if (cntr%4==0) then
+	if (step_x(4)==0) then
 		c_sprites[5][2]=rnd(l_w_sprites)
 		c_sprites[5][5]=rnd(r_w_sprites)
 	end
@@ -360,7 +365,7 @@ function draw_ground()
 	sspr(64,64,32,32,layers.trees.x,62,64,64)
 	sspr(96,64,32,32,layers.trees2.x,62,64,64)
  
-	if (cntr%4==0) do
+	if (step_x(4)==0) do
 		layers.sun.y=flr(29+rnd(3))
 	end
 
@@ -479,7 +484,7 @@ function draw_obstacles()
 		for obs_x, obstacle in ipairs(obs_row) do
 			if (obstacle!=0) then
 				-- get correct frame from the obstacle sprite table.
-				ost=o_sprites[obstacle][o_sprites_list[obstacle][flr(cntr%#o_sprites_list[obstacle])+1]]
+				ost=o_sprites[obstacle][o_sprites_list[obstacle][flr(step_x(#o_sprites_list[obstacle]))+1]]
 				-- draw sprites in ost.
 				for spr_y, row in ipairs(ost) do
 					for spr_x, sprite in ipairs(row) do
