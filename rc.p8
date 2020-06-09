@@ -59,10 +59,12 @@ function title_draw()
 	map(0,0,40,20,6,5)
 	
 	-- draw text.
-	local offset=80
+	local offset=76
 	print("rad chicken",42,offset,7)
 	offset+=8
 	print("🅾️/z to jump",40,offset,7)
+	offset+=8
+	print("❎/x to hover",38,offset,7)
 	offset+=8
 	print("⬆️ or ⬇️ for tricks",26,offset,7)
 	offset+=8
@@ -150,13 +152,9 @@ c_1_sprites={ -- redbull frames.
 		 { 0, 84, 85, 86, 87, 0},
 		 { 0,100,101,102,103, 0},
 		 {20,116,117,118,119,25},
-		 {36, 37, 38, 39, 40,41}},
-		{{ 0,  0, 65, 66, 67, 0},
-		 { 0, 80, 81, 82, 83, 0},
-		 { 0, 96, 97, 98, 99, 0},
-		 {20,112,113,114,115,25},
 		 {36, 37, 38, 39, 40,41}}}
-c_1_sprites_list={1,1,1,1,2,2,2,2,3,3,3,3,2,2,2,2} -- redbull frame order.
+c_1_sprites_list={1,1,1,1,2,2,2,2} -- redbull frame order.
+c_1_sprites_list_b={1,1,2,2} -- float frame order.
 c_2_sprites={ -- jackson frames.
 		{{ 0,  0,129,130,131, 0},
 		 { 0,144,145,146,147, 0},
@@ -195,7 +193,7 @@ function move_chicken()
 		if (c.trickd==false) then
 			sfx(2) -- only play for new trick.
 		end
-		c.spriteset=c_1_sprites[c_1_sprites_list[(step_x(#c_1_sprites_list))+1]]
+		c.spriteset=c_1_sprites[c_1_sprites_list_b[(step_x(#c_1_sprites_list_b))+1]]
 		c.dy=0 -- stop vertical movement.
 		c.float_cntr+=1
 		c.trickd=true
