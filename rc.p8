@@ -11,6 +11,8 @@ trans_colour=15
 game_speed=2
 title_speed=0.5 -- title text scroll speed.
 title_wait=4*60*title_speed -- seconds to wait before scroll.
+flash_cs={0,1,12} -- flash colour possibilities.
+flash_spd=3 -- flash changing speed in frames.
 
 function _init() title_init() end
 
@@ -21,6 +23,7 @@ function title_init()
 	poke(0x5f5c, 255) -- disable btnp repeat.
 	
 	cntr=0 -- just a counter that increases every frame.
+	flash_c={} -- store flashy colours.
 	fast() -- set initial speed and create pause menu item.
 	-- create pause menu item.
 	menuitem(2,"reset highscore",
@@ -115,7 +118,10 @@ function draw_bg()
 	cls(1) -- dark blue.
 	-- funky flash.
 	for i=36,91 do
-		line(i,0,i,34,rnd({0,1,12}))
+		if (cntr%flash_spd==0) then
+			flash_c[i]=rnd(flash_cs)
+		end
+		line(i,0,i,34,flash_c[i])
 	end
 	-- light blue.
 	for i,x in ipairs{4,12,19,25,29,32,35} do
