@@ -23,7 +23,6 @@ function title_init()
 	poke(0x5f5c, 255) -- disable btnp repeat.
 	
 	cntr=0 -- just a counter that increases every frame.
- thespot = 1
 	flash_c={} -- store flashy colours.
 	fast() -- set initial speed and create pause menu item.
 	-- create pause menu item.
@@ -117,7 +116,13 @@ end
 
 function draw_bg()
 	cls(1) -- dark blue.
-
+	-- funky flash.
+	for i=36,91 do
+		if (cntr%flash_spd==0) then
+			flash_c[i]=rnd(flash_cs)
+		end
+		line(i,0,i,34,flash_c[i])
+	end
 	-- light blue.
 	for i,x in ipairs{4,12,19,25,29,32,35} do
 		line(x,0,x,127,12)
@@ -219,28 +224,6 @@ function draw_bg()
 	-- floor.
 	spr(136,64,96,8,4)
 	spr(136,0,96,8,4,true)
-
-	-- funky womp flash.
-
-	if thespot >= 0 and thespot >= 0 then
-			rectfill(63+thespot,0,63-thespot,128,7)
-			thespot += 6
-	end 
-
-	if thespot >= 12 then
-		rectfill(52+thespot,0,76-thespot,128,12)
-		thespot += 1
-	end
-
-	if thespot >= 42 then
-		rectfill(24+thespot,0,104-thespot,128,1)
-		thespot += 1
-	end
-	
-	if thespot >= 128 then
-		thespot = 0
-	end
-	
 end
 -->8
 -- chicken
