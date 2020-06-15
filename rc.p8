@@ -33,9 +33,6 @@ function title_init()
 			end
 	)
 	
-	-- set transparency.
-	palt(0,false)
-	palt(trans_colour,true)
 end
 
 function fast()
@@ -222,8 +219,15 @@ function draw_bg()
 	offset+=8
 	print("any button to start",26,offset,colour)
 	-- floor.
+	pal(8,7)
 	spr(136,64,96,8,4)
 	spr(136,0,96,8,4,true)
+	pal()
+
+	-- set transparency.
+	palt(0,false)
+	palt(trans_colour,true)
+
 end
 -->8
 -- chicken
@@ -511,11 +515,11 @@ function draw_overlay()
 		print(score,7)
 		print(points,7)
 		-- draw float cntr.
-		rect(125-float_length,0,127,6,7)
+		rect(125-float_length,0,127,6,13)
 		if (c.float_cntr>float_length*(3/4)) then
 			rectfill(126-float_length+c.float_cntr,1,126,5,8)
 		else
-			rectfill(126-float_length+c.float_cntr,1,126,5,7)
+			rectfill(126-float_length+c.float_cntr,1,126,5,11)
 		end
 		-- draw trick text.
 		if (c.tt) then
